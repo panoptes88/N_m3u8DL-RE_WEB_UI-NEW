@@ -1,0 +1,19 @@
+services:
+  webui:
+    build: .
+    container_name: n-m3u8dl-webui
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./downloads:/app/downloads
+      - ./bin:/app/bin
+      - ./data.db:/app/data.db
+    environment:
+      - ADMIN_PASSWORD=admin123
+      - PORT=8080
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/user"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

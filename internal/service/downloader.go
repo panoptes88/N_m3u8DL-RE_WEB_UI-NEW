@@ -1,0 +1,447 @@
+package service
+
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"N_m3u8DL-RE-WEB-UI/internal/config"
+	"N_m3u8DL-RE-WEB-UI/internal/model"
+)
+
+// CreateTaskRequest 创建任务请求
+type CreateTaskRequest struct {
+	URL              string `json:"url"`
+	OutputName       string `json:"output_name"`
+	ThreadCount      int    `json:"thread_count"`
+	RetryCount       int    `json:"retry_count"`
+	Headers          string `json:"headers"`
+	BaseURL          string `json:"base_url"`
+	DelAfterDone     bool   `json:"del_after_done"`
+	BinaryMerge      bool   `json:"binary_merge"`
+	Key              string `json:"key"`
+	DecryptionEngine string `json:"decryption_engine"`
+	CustomArgs       string `json:"custom_args"`
+}
+
+func InitAdminUser(password string) {
+	var count int64
+	model.GetDB().Model(&model.User{}).Count(&count)
+	if count == 0 {
+		hashedPassword, err := model.HashPassword(password)
+		if err != nil {
+			log.Fatalf("密码加密失败: %v", err)
+		}
+
+		user := model.User{
+			Username: "admin",
+			Password: hashedPassword,
+		}
+
+		if err := model.GetDB().Create(&user).Error; err != nil {
+			log.Fatalf("创建管理员用户失败: %v", err)
+		}
+		log.Println("管理员用户创建成功")
+	}
+}
+
+func GetUserByUsername(username string) (*model.User, error) {
+	var user model.User
+	err := model.GetDB().Where("username = ?", username).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func CreateTask(req *CreateTaskRequest) (*model.Task, error) {
+	outputName := req.OutputName
+	if outputName == "" {
+		outputName = generateOutputName(req.URL)
+	}
+
+	// 设置默认值
+	threadCount := req.ThreadCount
+	if threadCount <= 0 {
+		threadCount = 32
+	}
+	retryCount := req.RetryCount
+	if retryCount <= 0 {
+		retryCount = 15
+	}
+	decryptionEngine := req.DecryptionEngine
+	if decryptionEngine == "" {
+		decryptionEngine = "MP4DECRYPT"
+	}
+
+	task := model.Task{
+		URL:               req.URL,
+		Status:            model.TaskStatusPending,
+		OutputName:        outputName,
+		ThreadCount:       threadCount,
+		RetryCount:        retryCount,
+		Headers:           req.Headers,
+		BaseURL:           req.BaseURL,
+		DelAfterDone:      req.DelAfterDone,
+		BinaryMerge:       req.BinaryMerge,
+		Key:               req.Key,
+		DecryptionEngine:  decryptionEngine,
+		CustomArgs:        req.CustomArgs,
+	}
+
+	if err := model.GetDB().Create(&task).Error; err != nil {
+		return nil, err
+	}
+
+	return &task, nil
+}
+
+func GetTaskByID(id uint) (*model.Task, error) {
+	var task model.Task
+	err := model.GetDB().First(&task, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &task, nil
+}
+
+func DeleteTask(id uint) error {
+	task, err := GetTaskByID(id)
+	if err != nil {
+		return err
+	}
+
+	// 删除日志文件
+	if task.LogFile != "" {
+		os.Remove(task.LogFile)
+	}
+
+	return model.GetDB().Delete(&task).Error
+}
+
+func GetActiveTasks() ([]model.Task, error) {
+	var tasks []model.Task
+	err := model.GetDB().Where("status IN ?", []string{model.TaskStatusPending, model.TaskStatusDownloading}).
+		Order("created_at ASC").
+		Find(&tasks).Error
+	return tasks, err
+}
+
+func GetTaskLog(id uint) (string, error) {
+	task, err := GetTaskByID(id)
+	if err != nil {
+		return "", err
+	}
+
+	if task.LogFile == "" {
+		return "", nil
+	}
+
+	content, err := ioutil.ReadFile(task.LogFile)
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
+}
+
+func ListFiles(downloadDir string) ([]map[string]interface{}, error) {
+	var files []map[string]interface{}
+
+	entries, err := os.ReadDir(downloadDir)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+
+		files = append(files, map[string]interface{}{
+			"name":    entry.Name(),
+			"size":    info.Size(),
+			"modTime": info.ModTime().Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	return files, nil
+}
+
+func CleanupTaskPID(taskID uint) {
+	model.GetDB().Model(&model.Task{}).Where("id = ?", taskID).Update("pid", 0)
+}
+
+func generateOutputName(url string) string {
+	if idx := strings.LastIndex(url, "/"); idx != -1 {
+		name := url[idx+1:]
+		if len(name) > 0 && !strings.HasPrefix(name, "?") {
+			return name
+		}
+	}
+	return fmt.Sprintf("download_%d", time.Now().Unix())
+}
+
+func StartTaskPolling(cfg *config.Config) {
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	log.Println("任务轮询服务已启动")
+	for range ticker.C {
+		tasks, err := GetActiveTasks()
+		if err != nil {
+			log.Printf("获取活跃任务失败: %v", err)
+			continue
+		}
+
+		if len(tasks) > 0 {
+			log.Printf("轮询: 发现 %d 个活跃任务", len(tasks))
+		}
+
+		for _, task := range tasks {
+			if task.Status == model.TaskStatusPending {
+				log.Printf("轮询: 发现待处理任务 %d，启动下载", task.ID)
+				go startDownloadTask(task.ID, cfg)
+			} else if task.Status == model.TaskStatusDownloading {
+				log.Printf("轮询: 检查下载中任务 %d (PID: %d)", task.ID, task.PID)
+				updateTaskStatus(task.ID)
+			}
+		}
+	}
+}
+
+func startDownloadTask(taskID uint, cfg *config.Config) {
+	task, err := GetTaskByID(taskID)
+	if err != nil {
+		log.Printf("获取任务失败: %v", err)
+		return
+	}
+
+	task.Status = model.TaskStatusDownloading
+	task.PID = -1
+	model.GetDB().Save(task)
+
+	logFile := filepath.Join(cfg.DownloadDir, fmt.Sprintf("task_%d.log", task.ID))
+	task.LogFile = logFile
+	model.GetDB().Save(task)
+
+	// 构建命令
+	args := buildCommandArgs(task, cfg)
+
+	// 打印命令用于调试
+	logCmd := cfg.GetN_m3u8DLREPath() + " " + strings.Join(args, " ")
+	log.Printf("执行命令: %s", logCmd)
+
+	cmd := exec.Command(cfg.GetN_m3u8DLREPath(), args...)
+	cmd.Stdout = openLogFile(logFile)
+	cmd.Stderr = cmd.Stdout
+
+	log.Printf("开始下载任务 %d: %s", task.ID, task.URL)
+
+	if err := cmd.Start(); err != nil {
+		updateTaskFailed(task.ID, err.Error())
+		return
+	}
+
+	task.PID = cmd.Process.Pid
+	model.GetDB().Save(task)
+
+	if err := cmd.Wait(); err != nil {
+		log.Printf("任务 %d 退出错误: %v", task.ID, err)
+	}
+
+	updateTaskStatus(task.ID)
+}
+
+func buildCommandArgs(task *model.Task, cfg *config.Config) []string {
+	var args []string
+
+	// URL 必须作为第一个参数（positional argument）
+	args = append(args, task.URL)
+
+	// 基本参数
+	args = append(args, "--save-dir", cfg.DownloadDir)
+	args = append(args, "--save-name", task.OutputName)
+
+	// 线程数
+	args = append(args, "--thread-count", strconv.Itoa(task.ThreadCount))
+
+	// 重试次数
+	args = append(args, "--download-retry-count", strconv.Itoa(task.RetryCount))
+
+	// 请求头
+	if task.Headers != "" {
+		headers := strings.Split(task.Headers, ";")
+		for _, h := range headers {
+			h = strings.TrimSpace(h)
+			if h != "" {
+				args = append(args, "-H", h)
+			}
+		}
+	}
+
+	// Base URL
+	if task.BaseURL != "" {
+		args = append(args, "--base-url", task.BaseURL)
+	}
+
+	// 删除临时文件
+	if task.DelAfterDone {
+		args = append(args, "--del-after-done")
+	} else {
+		args = append(args, "--no-del-after-done")
+	}
+
+	// 二进制合并
+	if task.BinaryMerge {
+		args = append(args, "--binary-merge")
+	}
+
+	// 解密
+	if task.Key != "" {
+		args = append(args, "--key", task.Key)
+		args = append(args, "--decryption-engine", task.DecryptionEngine)
+		if task.DecryptionEngine == "MP4DECRYPT" {
+			args = append(args, "--decryption-binary-path", cfg.GetMp4decryptPath())
+		}
+	}
+
+	// ffmpeg 路径
+	args = append(args, "--ffmpeg-binary-path", cfg.GetFFmpegPath())
+
+	// 自定义参数
+	if task.CustomArgs != "" {
+		customParts := strings.Split(task.CustomArgs, " ")
+		for _, part := range customParts {
+			part = strings.TrimSpace(part)
+			if part != "" {
+				args = append(args, part)
+			}
+		}
+	}
+
+	return args
+}
+
+func updateTaskStatus(taskID uint) {
+	task, err := GetTaskByID(taskID)
+	if err != nil {
+		return
+	}
+
+	logFile := task.LogFile
+	progress, speed := parseProgress(logFile)
+
+	task.Progress = progress
+	task.Speed = speed
+
+	// 真正检测进程是否还在运行
+	processStillRunning := false
+	if task.PID > 0 {
+		proc, err := os.FindProcess(task.PID)
+		if err == nil {
+			// 尝试发送信号0来真正检测进程是否存在
+			if err := proc.Signal(os.Signal(nil)); err == nil {
+				processStillRunning = true
+			}
+		}
+	}
+
+	// 如果进程还在运行，只更新进度，不更新完成状态
+	if processStillRunning {
+		task.PID = 0
+		model.GetDB().Save(task)
+		return
+	}
+
+	// 进程已结束，检查日志更新状态
+	if logContent, err := ioutil.ReadFile(logFile); err == nil {
+		content := string(logContent)
+		// 检查完成状态
+		if strings.Contains(content, "合并完成") || strings.Contains(content, "downloaded successfully") || strings.Contains(content, " Done") {
+			task.Status = model.TaskStatusCompleted
+			now := time.Now()
+			task.FinishedAt = &now
+			task.Progress = 100
+		} else {
+			// 检查真正的错误（排除警告）
+			errorRe := regexp.MustCompile("(?i)(ERROR|Error|exception|Exception|失败|异常)[^`]*")
+			if matches := errorRe.FindStringSubmatch(content); len(matches) > 0 {
+				// 排除一些误匹配的警告
+				if !strings.Contains(matches[0], "start time") && !strings.Contains(matches[0], "timestamp discontinuity") {
+					task.Status = model.TaskStatusFailed
+					task.ErrorMsg = matches[0]
+					now := time.Now()
+					task.FinishedAt = &now
+				}
+			}
+		}
+	}
+
+	task.PID = 0
+	model.GetDB().Save(task)
+}
+
+func updateTaskFailed(taskID uint, errorMsg string) {
+	task, _ := GetTaskByID(taskID)
+	if task != nil {
+		task.Status = model.TaskStatusFailed
+		task.ErrorMsg = errorMsg
+		now := time.Now()
+		task.FinishedAt = &now
+		model.GetDB().Save(task)
+	}
+}
+
+func parseProgress(logFile string) (int, string) {
+	content, err := ioutil.ReadFile(logFile)
+	if err != nil {
+		return 0, ""
+	}
+
+	text := string(content)
+
+	progressRe := regexp.MustCompile(`(\d+\.?\d*)%`)
+	if matches := progressRe.FindStringSubmatch(text); len(matches) > 2 {
+		if p, err := strconv.Atoi(matches[1]); err == nil {
+			progress := p
+			if progress > 100 {
+				progress = 100
+			}
+			if progress < 0 {
+				progress = 0
+			}
+
+			speedRe := regexp.MustCompile(`(\d+\.?\d*\s*[KMG]?B/s)`)
+			speed := ""
+			if speedMatches := speedRe.FindStringSubmatch(text); len(speedMatches) > 1 {
+				speed = speedMatches[1]
+			}
+
+			return progress, speed
+		}
+	}
+
+	return 0, ""
+}
+
+func openLogFile(path string) *os.File {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Printf("创建日志文件失败: %v", err)
+		return os.Stdout
+	}
+	return file
+}
