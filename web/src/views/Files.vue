@@ -85,9 +85,27 @@ const videoPlayer = ref(null)
 const videoExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v', '.3gp']
 
 const columns = [
-  { title: '文件名', dataIndex: 'name', key: 'name', ellipsis: true },
-  { title: '大小', dataIndex: 'size', key: 'size', width: 100 },
-  { title: '修改时间', dataIndex: 'modTime', key: 'modTime', width: 160 },
+  {
+    title: '文件名',
+    dataIndex: 'name',
+    key: 'name',
+    ellipsis: true,
+    sorter: (a, b) => a.name.localeCompare(b.name)
+  },
+  {
+    title: '大小',
+    dataIndex: 'size',
+    key: 'size',
+    width: 100,
+    sorter: (a, b) => a.size - b.size
+  },
+  {
+    title: '修改时间',
+    dataIndex: 'modTime',
+    key: 'modTime',
+    width: 160,
+    sorter: (a, b) => new Date(a.modTime) - new Date(b.modTime)
+  },
   { title: '操作', key: 'action', width: 150 }
 ]
 
