@@ -35,8 +35,12 @@ RUN go mod tidy && CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o server 
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates libgcc-s1 libstdc++6 libicu72 \
+    ca-certificates libgcc-s1 libstdc++6 libicu72 tzdata \
     && rm -rf /var/lib/apt/lists/*
+
+# 设置时区为上海
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /app
 

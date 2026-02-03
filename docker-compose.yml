@@ -30,6 +30,8 @@ services:
       - ALLOW_INSECURE=false
       # 下载超时配置（秒），0表示不限制
       - DOWNLOAD_TIMEOUT=0
+      # 时区配置
+      - TZ=Asia/Shanghai
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/user"]

@@ -20,7 +20,7 @@
       <a-table
         :columns="columns"
         :data-source="files"
-        :pagination="{ pageSize: 10 }"
+        :pagination="paginationConfig"
         :loading="loading"
         :row-selection="rowSelection"
         :row-key="record => record.name"
@@ -91,8 +91,16 @@ const currentVideoName = ref('')
 const currentVideoUrl = ref('')
 const videoPlayer = ref(null)
 const selectedRowKeys = ref([])
+const pageSize = ref(10)
 
 const videoExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v', '.3gp']
+
+const paginationConfig = computed(() => ({
+  pageSize: pageSize.value,
+  showSizeChanger: true,
+  pageSizeOptions: ['10', '20', '50', '100', '200'],
+  showTotal: (total) => `共 ${total} 个文件`
+}))
 
 const columns = [
   {
