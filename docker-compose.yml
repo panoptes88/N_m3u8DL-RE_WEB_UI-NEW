@@ -20,7 +20,6 @@ services:
       - "8080:8080"
     volumes:
       - ./downloads:/app/downloads
-      - ./bin:/app/bin
       - ./data.db:/app/data.db
     environment:
       - ADMIN_PASSWORD=admin123
