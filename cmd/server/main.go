@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"N_m3u8DL-RE-WEB-UI/internal/config"
@@ -40,7 +41,7 @@ func main() {
 
 	// CORS 配置
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:8080", "http://127.0.0.1:8080"},
+		AllowOrigins:     strings.Split(cfg.AllowOrigins, ","),
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,

@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"N_m3u8DL-RE-WEB-UI/internal/config"
 	"N_m3u8DL-RE-WEB-UI/internal/model"
 	"N_m3u8DL-RE-WEB-UI/internal/service"
 
@@ -22,18 +23,16 @@ func Login(c *gin.Context) {
 	}
 
 	user, err := service.GetUserByUsername(req.Username)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户不存在"})
-		return
-	}
-
-	if !model.CheckPassword(req.Password, user.Password) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "密码错误"})
+	if err != nil || !model.CheckPassword(req.Password, user.Password) {
+		// 统一错误信息，防止用户名枚举
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户名或密码错误"})
 		return
 	}
 
 	// 设置 cookie，有效期 24 小时
-	c.SetCookie("auth_token", user.Username, 86400, "/", "", false, true)
+	// Secure: 生产环境应设为 true（通过环境变量 ALLOW_INSECURE 控制）
+	cfg := config.Load()
+	c.SetCookie("auth_token", user.Username, 86400, "/", "", !cfg.AllowInsecure, true)
 
 	c.JSON(http.StatusOK, gin.H{
 		"id":       user.ID,
@@ -42,7 +41,7 @@ func Login(c *gin.Context) {
 }
 
 func Logout(c *gin.Context) {
-	c.SetCookie("auth_token", "", -1, "/", "", false, true)
+	c.SetCookie("auth_token", "", -1, "/", "", !config.Load().AllowInsecure, true)
 	c.JSON(http.StatusOK, gin.H{"message": "登出成功"})
 }
 

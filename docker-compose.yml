@@ -1,4 +1,18 @@
 services:
+  # 构建服务 - 用于编译后端
+  builder:
+    image: golang:1.21-bookworm
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - GOPROXY=https://goproxy.cn,direct
+      - GOSUMDB=sum.golang.org
+    command: >
+      sh -c "go mod tidy && CGO_ENABLED=1 go build -ldflags='-s -w' -o server ./cmd/server"
+    profiles:
+      - build
+
   webui:
     build: .
     container_name: n-m3u8dl-webui

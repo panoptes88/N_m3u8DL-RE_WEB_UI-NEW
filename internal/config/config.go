@@ -7,11 +7,13 @@ import (
 )
 
 type Config struct {
-	Port         int
-	DBPath       string
-	DownloadDir  string
+	Port          int
+	DBPath        string
+	DownloadDir   string
 	AdminPassword string
-	BinDir       string
+	BinDir        string
+	AllowOrigins  string
+	AllowInsecure bool // 是否允许非HTTPS环境（开发模式）
 }
 
 func Load() *Config {
@@ -40,12 +42,21 @@ func Load() *Config {
 		dbPath = "./data.db"
 	}
 
+	allowOrigins := os.Getenv("ALLOW_ORIGINS")
+	if allowOrigins == "" {
+		allowOrigins = "http://localhost:8080,http://127.0.0.1:8080"
+	}
+
+	allowInsecure, _ := strconv.ParseBool(os.Getenv("ALLOW_INSECURE"))
+
 	return &Config{
-		Port:         port,
-		DBPath:       dbPath,
-		DownloadDir:  downloadDir,
+		Port:          port,
+		DBPath:        dbPath,
+		DownloadDir:   downloadDir,
 		AdminPassword: adminPassword,
-		BinDir:       binDir,
+		BinDir:        binDir,
+		AllowOrigins:  allowOrigins,
+		AllowInsecure: allowInsecure,
 	}
 }
 
