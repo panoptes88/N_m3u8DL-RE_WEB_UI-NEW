@@ -56,21 +56,3 @@ func GetUser(c *gin.Context) {
 		"username": username,
 	})
 }
-
-func IsLoggedIn(c *gin.Context) bool {
-	username, err := c.Cookie("auth_token")
-	return err == nil && username != ""
-}
-
-func GetCurrentUserID(c *gin.Context) uint {
-	return 0
-}
-
-func GetCurrentUsername(c *gin.Context) string {
-	username, _ := c.Cookie("auth_token")
-	return username
-}
-
-func RefreshSession(c *gin.Context) {
-	// Cookie 自动刷新
-}
