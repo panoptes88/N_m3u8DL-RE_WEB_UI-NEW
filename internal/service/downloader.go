@@ -403,6 +403,18 @@ func updateTaskStatus(taskID uint) {
 		return
 	}
 
+	// 进程已不存在
+	if task.Status == model.TaskStatusDownloading {
+		// 原来是下载中状态，但进程已死，标记为中断
+		task.Status = model.TaskStatusInterrupted
+		task.ErrorMsg = "下载进程已中断，请重试或删除任务"
+		now := time.Now()
+		task.FinishedAt = &now
+		task.PID = 0
+		model.GetDB().Save(task)
+		return
+	}
+
 	// 进程已结束，检查日志更新状态
 	if logContent, err := ioutil.ReadFile(logFile); err == nil {
 		content := string(logContent)

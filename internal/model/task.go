@@ -39,6 +39,7 @@ const (
 	TaskStatusDownloading = "downloading"
 	TaskStatusCompleted   = "completed"
 	TaskStatusFailed      = "failed"
+	TaskStatusInterrupted = "interrupted" // 下载中断（进程已死）
 )
 
 func (Task) TableName() string {

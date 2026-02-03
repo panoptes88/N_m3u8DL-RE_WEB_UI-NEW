@@ -272,7 +272,8 @@ function getStatusColor(status) {
     pending: 'orange',
     downloading: 'blue',
     completed: 'green',
-    failed: 'red'
+    failed: 'red',
+    interrupted: 'gold'
   }
   return colors[status] || 'default'
 }
@@ -282,7 +283,8 @@ function getStatusText(status) {
     pending: '等待中',
     downloading: '下载中',
     completed: '已完成',
-    failed: '失败'
+    failed: '下载失败',
+    interrupted: '已中断'
   }
   return texts[status] || status
 }
