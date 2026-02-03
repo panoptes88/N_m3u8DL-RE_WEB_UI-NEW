@@ -163,15 +163,7 @@
             <a-progress
               :percent="record.progress"
               :status="record.status === 'failed' ? 'exception' : 'active'"
-            >
-              <template #format>
-                <span v-if="record.downloaded_size && record.total_size">
-                  {{ record.downloaded_size }} / {{ record.total_size }}
-                </span>
-                <span v-else-if="record.speed">{{ record.speed }}</span>
-                <span v-else>-</span>
-              </template>
-            </a-progress>
+            />
           </template>
           <template v-if="column.key === 'createdAt'">
             {{ formatTime(record.created_at) }}
@@ -253,10 +245,10 @@ const formRules = {
 
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
-  { title: 'URL', dataIndex: 'url', key: 'url', ellipsis: true, width: 250 },
-  { title: '输出', dataIndex: 'output_name', key: 'outputName', ellipsis: true, width: 150 },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 90 },
-  { title: '进度', dataIndex: 'progress', key: 'progress', width: 280 },
+  { title: 'URL', dataIndex: 'url', key: 'url', ellipsis: true, width: 350 },
+  { title: '输出', dataIndex: 'output_name', key: 'outputName', ellipsis: true, width: 120 },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 80 },
+  { title: '进度', dataIndex: 'progress', key: 'progress', width: 180 },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 160 },
   { title: '操作', key: 'action', width: 120 }
 ]
