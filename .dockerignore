@@ -9,6 +9,7 @@ data.db
 # Logs
 *.log
 Logs/
+bin/Logs/
 
 # Binaries - 二进制工具（需要自行准备）
 bin/
