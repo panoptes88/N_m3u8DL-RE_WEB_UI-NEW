@@ -1,3 +1,6 @@
+# Binaries (需要自行准备)
+bin/
+
 # Logs
 bin/Logs/
 *.log
