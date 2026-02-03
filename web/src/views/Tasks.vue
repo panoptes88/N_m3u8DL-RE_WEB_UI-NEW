@@ -99,6 +99,19 @@
           </a-col>
         </a-row>
 
+        <!-- 代理设置 -->
+        <a-divider>代理设置</a-divider>
+        <a-row :gutter="16">
+          <a-col :xs="24" :sm="24" :md="12">
+            <a-form-item label="自定义代理" name="customProxy">
+              <a-input
+                v-model:value="formState.customProxy"
+                placeholder="如: http://127.0.0.1:7890"
+              />
+            </a-form-item>
+          </a-col>
+        </a-row>
+
         <!-- 自定义参数 -->
         <a-divider>其他参数</a-divider>
         <a-row :gutter="16">
@@ -235,7 +248,8 @@ const formState = reactive({
   binaryMerge: false,
   key: '',
   decryptionEngine: 'MP4DECRYPT',
-  customArgs: ''
+  customArgs: '',
+  customProxy: ''
 })
 
 const formRules = {
@@ -294,6 +308,7 @@ function resetForm() {
   formState.key = ''
   formState.decryptionEngine = 'MP4DECRYPT'
   formState.customArgs = ''
+  formState.customProxy = ''
   formRef.value?.clearValidate()
 }
 
@@ -318,7 +333,8 @@ async function handleCreate() {
       binary_merge: formState.binaryMerge,
       key: formState.key,
       decryption_engine: formState.decryptionEngine,
-      custom_args: formState.customArgs
+      custom_args: formState.customArgs,
+      custom_proxy: formState.customProxy
     }
 
     await taskStore.createTask(args)
