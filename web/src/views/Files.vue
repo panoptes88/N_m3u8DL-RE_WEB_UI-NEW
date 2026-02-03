@@ -17,6 +17,13 @@
         :loading="loading"
       >
         <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'name'">
+            <a-space>
+              <PlayCircleOutlined v-if="isVideoFile(record.name)" class="play-icon" @click="playVideo(record)" />
+              <FileOutlined v-else />
+              <span>{{ record.name }}</span>
+            </a-space>
+          </template>
           <template v-if="column.key === 'size'">
             {{ formatSize(record.size) }}
           </template>
@@ -39,17 +46,43 @@
         </template>
       </a-table>
     </a-card>
+
+    <!-- 视频播放弹窗 -->
+    <a-modal
+      v-model:open="videoModalVisible"
+      :title="currentVideoName"
+      width="800px"
+      :footer="null"
+      @cancel="closeVideo"
+    >
+      <div class="video-container">
+        <video
+          ref="videoPlayer"
+          controls
+          class="video-player"
+          @error="handleVideoError"
+        >
+          您的浏览器不支持视频播放
+        </video>
+      </div>
+    </a-modal>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
-import { ReloadOutlined } from '@ant-design/icons-vue'
+import { ReloadOutlined, PlayCircleOutlined, FileOutlined } from '@ant-design/icons-vue'
 import { get, del } from '../api'
 
 const loading = ref(false)
 const files = ref([])
+const videoModalVisible = ref(false)
+const currentVideoName = ref('')
+const currentVideoUrl = ref('')
+const videoPlayer = ref(null)
+
+const videoExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v', '.3gp']
 
 const columns = [
   { title: '文件名', dataIndex: 'name', key: 'name', ellipsis: true },
@@ -66,6 +99,15 @@ function formatSize(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+function isVideoFile(filename) {
+  const ext = filename.substring(filename.lastIndexOf('.')).toLowerCase()
+  return videoExtensions.includes(ext)
+}
+
+function isVideoFileByName(name) {
+  return isVideoFile(name)
+}
+
 async function fetchFiles() {
   loading.value = true
   try {
@@ -79,6 +121,33 @@ async function fetchFiles() {
 
 function downloadFile(name) {
   window.open(`/api/files/download?name=${encodeURIComponent(name)}`, '_blank')
+}
+
+function playVideo(record) {
+  currentVideoName.value = record.name
+  currentVideoUrl.value = `/api/files/download?name=${encodeURIComponent(record.name)}`
+  videoModalVisible.value = true
+
+  // 等待 DOM 更新后设置视频源
+  setTimeout(() => {
+    if (videoPlayer.value) {
+      videoPlayer.value.src = currentVideoUrl.value
+      videoPlayer.value.load()
+    }
+  }, 100)
+}
+
+function closeVideo() {
+  if (videoPlayer.value) {
+    videoPlayer.value.pause()
+    videoPlayer.value.src = ''
+  }
+  currentVideoName.value = ''
+  currentVideoUrl.value = ''
+}
+
+function handleVideoError() {
+  message.error('视频加载失败，请检查文件是否完整')
 }
 
 async function deleteFile(name) {
@@ -100,5 +169,30 @@ onMounted(() => {
 .files-page {
   display: flex;
   flex-direction: column;
+}
+
+.play-icon {
+  color: #1677ff;
+  cursor: pointer;
+  font-size: 18px;
+  transition: color 0.3s;
+}
+
+.play-icon:hover {
+  color: #4096ff;
+}
+
+.video-container {
+  display: flex;
+  justify-content: center;
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.video-player {
+  max-width: 100%;
+  max-height: 450px;
+  width: 100%;
 }
 </style>
