@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -256,7 +257,14 @@ func startDownloadTask(taskID uint, cfg *config.Config) {
 	logCmd := cfg.GetN_m3u8DLREPath() + " " + strings.Join(args, " ")
 	log.Printf("执行命令: %s", logCmd)
 
-	cmd := exec.Command(cfg.GetN_m3u8DLREPath(), args...)
+	// 创建 context 用于超时控制
+	ctx := context.Background()
+	timeout := cfg.GetDownloadTimeout()
+	if timeout > 0 {
+		ctx, _ = context.WithTimeout(ctx, timeout)
+	}
+
+	cmd := exec.CommandContext(ctx, cfg.GetN_m3u8DLREPath(), args...)
 	cmd.Stdout = openLogFile(logFile)
 	cmd.Stderr = cmd.Stdout
 
@@ -271,6 +279,12 @@ func startDownloadTask(taskID uint, cfg *config.Config) {
 	model.GetDB().Save(task)
 
 	if err := cmd.Wait(); err != nil {
+		// 检查是否超时
+		if ctx.Err() == context.DeadlineExceeded {
+			log.Printf("任务 %d 超时", task.ID)
+			// 终止进程
+			cmd.Process.Kill()
+		}
 		log.Printf("任务 %d 退出错误: %v", task.ID, err)
 	}
 

@@ -4,16 +4,18 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 )
 
 type Config struct {
-	Port          int
-	DBPath        string
-	DownloadDir   string
-	AdminPassword string
-	BinDir        string
-	AllowOrigins  string
-	AllowInsecure bool // 是否允许非HTTPS环境（开发模式）
+	Port            int
+	DBPath          string
+	DownloadDir     string
+	AdminPassword   string
+	BinDir          string
+	AllowOrigins    string
+	AllowInsecure   bool   // 是否允许非HTTPS环境（开发模式）
+	DownloadTimeout int    // 下载超时时间（秒），0表示不限制
 }
 
 func Load() *Config {
@@ -49,14 +51,20 @@ func Load() *Config {
 
 	allowInsecure, _ := strconv.ParseBool(os.Getenv("ALLOW_INSECURE"))
 
+	downloadTimeout, _ := strconv.Atoi(os.Getenv("DOWNLOAD_TIMEOUT"))
+	if downloadTimeout <= 0 {
+		downloadTimeout = 0 // 0 表示不限制超时
+	}
+
 	return &Config{
-		Port:          port,
-		DBPath:        dbPath,
-		DownloadDir:   downloadDir,
-		AdminPassword: adminPassword,
-		BinDir:        binDir,
-		AllowOrigins:  allowOrigins,
-		AllowInsecure: allowInsecure,
+		Port:            port,
+		DBPath:          dbPath,
+		DownloadDir:     downloadDir,
+		AdminPassword:   adminPassword,
+		BinDir:          binDir,
+		AllowOrigins:    allowOrigins,
+		AllowInsecure:   allowInsecure,
+		DownloadTimeout: downloadTimeout,
 	}
 }
 
@@ -70,4 +78,12 @@ func (c *Config) GetFFmpegPath() string {
 
 func (c *Config) GetMp4decryptPath() string {
 	return fmt.Sprintf("%s/mp4decrypt", c.BinDir)
+}
+
+// GetDownloadTimeout 返回下载超时时间
+func (c *Config) GetDownloadTimeout() time.Duration {
+	if c.DownloadTimeout <= 0 {
+		return 0 // 不限制超时
+	}
+	return time.Duration(c.DownloadTimeout) * time.Second
 }
