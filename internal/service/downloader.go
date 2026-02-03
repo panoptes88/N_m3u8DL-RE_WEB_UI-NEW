@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"N_m3u8DL-RE-WEB-UI/internal/config"
@@ -116,6 +117,17 @@ func DeleteTask(id uint) error {
 	task, err := GetTaskByID(id)
 	if err != nil {
 		return err
+	}
+
+	// 如果任务还在运行，先终止进程
+	if task.Status == model.TaskStatusDownloading && task.PID > 0 {
+		proc, err := os.FindProcess(task.PID)
+		if err == nil {
+			// 发送 SIGTERM 信号优雅终止
+			if err := proc.Signal(syscall.SIGTERM); err == nil {
+				log.Printf("已终止任务 %d 的进程 (PID: %d)", id, task.PID)
+			}
+		}
 	}
 
 	// 删除日志文件
@@ -353,7 +365,7 @@ func updateTaskStatus(taskID uint) {
 		proc, err := os.FindProcess(task.PID)
 		if err == nil {
 			// 尝试发送信号0来真正检测进程是否存在
-			if err := proc.Signal(os.Signal(nil)); err == nil {
+			if err := proc.Signal(syscall.Signal(0)); err == nil {
 				processStillRunning = true
 			}
 		}
