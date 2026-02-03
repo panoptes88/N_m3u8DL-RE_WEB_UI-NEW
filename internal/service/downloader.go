@@ -31,6 +31,7 @@ type CreateTaskRequest struct {
 	Key              string `json:"key"`
 	DecryptionEngine string `json:"decryption_engine"`
 	CustomArgs       string `json:"custom_args"`
+	CustomProxy      string `json:"custom_proxy"`
 }
 
 func InitAdminUser(password string) {
@@ -96,6 +97,7 @@ func CreateTask(req *CreateTaskRequest) (*model.Task, error) {
 		Key:               req.Key,
 		DecryptionEngine:  decryptionEngine,
 		CustomArgs:        req.CustomArgs,
+		CustomProxy:       req.CustomProxy,
 	}
 
 	if err := model.GetDB().Create(&task).Error; err != nil {
@@ -321,6 +323,11 @@ func buildCommandArgs(task *model.Task, cfg *config.Config) []string {
 	// Base URL
 	if task.BaseURL != "" {
 		args = append(args, "--base-url", task.BaseURL)
+	}
+
+	// 自定义代理
+	if task.CustomProxy != "" {
+		args = append(args, "--custom-proxy", task.CustomProxy)
 	}
 
 	// 删除临时文件

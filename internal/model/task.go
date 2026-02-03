@@ -24,6 +24,7 @@ type Task struct {
 	Key               string         `gorm:"size:512" json:"key,omitempty"`
 	DecryptionEngine  string         `gorm:"size:32;default:'MP4DECRYPT'" json:"decryption_engine"`
 	CustomArgs        string         `gorm:"size:2048" json:"custom_args,omitempty"`
+	CustomProxy       string         `gorm:"size:512" json:"custom_proxy,omitempty"`
 	CreatedAt         time.Time      `json:"created_at"`
 	UpdatedAt         time.Time      `json:"updated_at"`
 	FinishedAt        *time.Time     `json:"finished_at,omitempty"`
