@@ -226,7 +226,6 @@ const statusFilter = ref('')
 const logModalVisible = ref(false)
 const logLoading = ref(false)
 const logContent = ref('')
-let timer = null
 
 // 表单数据
 const formState = reactive({
@@ -361,12 +360,13 @@ async function viewLog(task) {
 }
 
 onMounted(() => {
-  fetchTasks()
-  timer = setInterval(fetchTasks, 3000)
+  // 使用 store 统一管理的轮询（单例模式）
+  taskStore.startPolling()
 })
 
 onUnmounted(() => {
-  if (timer) clearInterval(timer)
+  // 不停止轮询，因为 Dashboard 页面可能还在使用
+  // 轮询由 store 统一管理
 })
 </script>
 

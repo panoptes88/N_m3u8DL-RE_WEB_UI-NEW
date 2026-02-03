@@ -154,7 +154,6 @@ const quickDownloadForm = ref({ url: '', outputName: '' })
 const logModalVisible = ref(false)
 const logLoading = ref(false)
 const logContent = ref('')
-let progressTimer = null
 
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
@@ -234,23 +233,14 @@ async function deleteTask(id) {
   }
 }
 
-async function fetchTasks() {
-  await taskStore.fetchTasks()
-}
-
-function startProgressPolling() {
-  progressTimer = setInterval(fetchTasks, 3000)
-}
-
 onMounted(() => {
-  fetchTasks()
-  startProgressPolling()
+  // 使用 store 统一管理的轮询（单例模式）
+  taskStore.startPolling()
 })
 
 onUnmounted(() => {
-  if (progressTimer) {
-    clearInterval(progressTimer)
-  }
+  // 不停止轮询，因为 Tasks 页面可能还在使用
+  // 轮询由 store 统一管理
 })
 </script>
 
