@@ -10,11 +10,20 @@
         </a-space>
       </template>
 
+      <div class="table-header" v-if="selectedRowKeys.length > 0">
+        <span>已选择 {{ selectedRowKeys.length }} 个文件</span>
+        <a-button type="primary" danger @click="batchDelete">
+          批量删除
+        </a-button>
+      </div>
+
       <a-table
         :columns="columns"
         :data-source="files"
         :pagination="{ pageSize: 10 }"
         :loading="loading"
+        :row-selection="rowSelection"
+        :row-key="record => record.name"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'name'">
@@ -70,7 +79,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { ReloadOutlined, PlayCircleOutlined, FileOutlined } from '@ant-design/icons-vue'
 import { get, del } from '../api'
@@ -81,6 +90,7 @@ const videoModalVisible = ref(false)
 const currentVideoName = ref('')
 const currentVideoUrl = ref('')
 const videoPlayer = ref(null)
+const selectedRowKeys = ref([])
 
 const videoExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v', '.3gp']
 
@@ -109,6 +119,13 @@ const columns = [
   { title: '操作', key: 'action', width: 150 }
 ]
 
+const rowSelection = computed(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys) => {
+    selectedRowKeys.value = keys
+  }
+}))
+
 function formatSize(bytes) {
   if (bytes === 0) return '0 B'
   const k = 1024
@@ -122,14 +139,12 @@ function isVideoFile(filename) {
   return videoExtensions.includes(ext)
 }
 
-function isVideoFileByName(name) {
-  return isVideoFile(name)
-}
-
 async function fetchFiles() {
   loading.value = true
   try {
     files.value = await get('/files')
+    // 清空选择
+    selectedRowKeys.value = []
   } catch (err) {
     message.error('获取文件列表失败')
   } finally {
@@ -180,6 +195,49 @@ async function deleteFile(name) {
   }
 }
 
+async function batchDelete() {
+  if (selectedRowKeys.value.length === 0) {
+    return
+  }
+
+  const names = selectedRowKeys.value.filter(name => {
+    // 过滤掉目录
+    const file = files.value.find(f => f.name === name)
+    return file && !file.isDir
+  })
+
+  if (names.length === 0) {
+    message.warning('没有可删除的文件')
+    return
+  }
+
+  try {
+    // 逐个删除
+    let success = 0
+    let failed = 0
+    for (const name of names) {
+      try {
+        await del(`/files/${encodeURIComponent(name)}`)
+        success++
+      } catch {
+        failed++
+      }
+    }
+
+    if (success > 0) {
+      message.success(`成功删除 ${success} 个文件`)
+    }
+    if (failed > 0) {
+      message.warning(`删除失败 ${failed} 个文件`)
+    }
+
+    selectedRowKeys.value = []
+    fetchFiles()
+  } catch (err) {
+    message.error('批量删除失败')
+  }
+}
+
 onMounted(() => {
   fetchFiles()
 })
@@ -189,6 +247,17 @@ onMounted(() => {
 .files-page {
   display: flex;
   flex-direction: column;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
 }
 
 .play-icon {
