@@ -96,13 +96,7 @@
               :percent="record.progress"
               :status="record.status === 'failed' ? 'exception' : 'active'"
               size="small"
-            >
-              <template #format>
-                <span v-if="record.downloaded_size && record.total_size" class="size-text">
-                  {{ record.downloaded_size }} / {{ record.total_size }}
-                </span>
-              </template>
-            </a-progress>
+            />
           </template>
           <template v-if="column.key === 'action'">
             <a-space>
@@ -163,9 +157,9 @@ const logContent = ref('')
 
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
-  { title: 'URL', dataIndex: 'url', key: 'url', ellipsis: true, width: 300 },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 90 },
-  { title: '进度', dataIndex: 'progress', key: 'progress', width: 280 },
+  { title: 'URL', dataIndex: 'url', key: 'url', ellipsis: true, width: 400 },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 80 },
+  { title: '进度', dataIndex: 'progress', key: 'progress', width: 180 },
   { title: '操作', key: 'action', width: 120 }
 ]
 
