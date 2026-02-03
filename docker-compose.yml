@@ -25,6 +25,11 @@ services:
     environment:
       - ADMIN_PASSWORD=admin123
       - PORT=8080
+      # 安全优化配置
+      - ALLOW_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+      - ALLOW_INSECURE=false
+      # 下载超时配置（秒），0表示不限制
+      - DOWNLOAD_TIMEOUT=0
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/user"]
