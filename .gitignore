@@ -29,6 +29,7 @@ Thumbs.db
 *.exe
 *.test
 *.out
+server
 
 # Temporary
 *.tmp
