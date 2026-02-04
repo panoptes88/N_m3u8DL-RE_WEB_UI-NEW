@@ -11,6 +11,12 @@
 - 文件浏览和管理
 - Docker 容器化部署
 
+## 界面预览
+
+| 首页 | 下载任务 | 文件管理 |
+|:---:|:---:|:---:|
+| ![首页](https://youke.xn--y7xa690gmna.cn/s1/2026/02/04/6982e55f9eacd.webp) | ![下载任务](https://youke.xn--y7xa690gmna.cn/s1/2026/02/04/6982e55fedf2d.webp) | ![文件管理](https://youke.xn--y7xa690gmna.cn/s1/2026/02/04/6982e55f876fe.webp) |
+
 ## 快速开始
 
 ### Docker 快速体验
