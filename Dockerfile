@@ -48,7 +48,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 WORKDIR /app
 
 # 创建必要目录
-RUN mkdir -p /app/downloads /app/bin /app/Logs
+RUN mkdir -p /app/downloads /app/Logs
 
 # 复制二进制文件
 COPY bin/ /app/bin/
