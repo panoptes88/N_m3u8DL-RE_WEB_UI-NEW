@@ -20,13 +20,14 @@ services:
       - "8080:8080"
     volumes:
       - ./downloads:/app/downloads
-      - ./data.db:/app/data.db
+      - ./db:/app/db
     environment:
       - ADMIN_PASSWORD=admin123
       - PORT=8080
+      - DB_PATH=/app/db/data.db
       # 安全优化配置
       - ALLOW_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
-      - ALLOW_INSECURE=false
+      - ALLOW_INSECURE=true
       # 下载超时配置（秒），0表示不限制
       - DOWNLOAD_TIMEOUT=0
       # 时区配置

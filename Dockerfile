@@ -29,10 +29,30 @@ ENV GOPROXY=https://goproxy.cn,direct
 # 构建
 RUN go mod tidy && CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o server ./cmd/server
 
-# 最终镜像 - 使用 debian-slim
+# 下载二进制文件阶段
+FROM alpine:3.19 AS downloader
+
+WORKDIR /tmp
+
+# 安装下载和解压工具
+RUN apk add --no-cache wget unzip tar xz
+
+# 下载 N_m3u8DL-RE
+RUN wget -q https://github.com/nilaoda/N_m3u8DL-RE/releases/download/v0.5.1-beta/N_m3u8DL-RE_v0.5.1-beta_linux-x64_20251029.tar.gz && \
+    tar -xzf N_m3u8DL-RE_v0.5.1-beta_linux-x64_20251029.tar.gz
+
+# 下载 FFmpeg
+RUN wget -q https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-lgpl.tar.xz && \
+    tar -xJf ffmpeg-master-latest-linux64-lgpl.tar.xz
+
+# 下载 Bento4
+RUN wget -q https://www.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-641.x86_64-unknown-linux.zip && \
+    unzip -q Bento4-SDK-1-6-0-641.x86_64-unknown-linux.zip
+
+# 最终镜像
 FROM debian:bookworm-slim
 
-# 安装必要的运行时库
+# 只安装必要的运行时库
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libgcc-s1 \
@@ -48,10 +68,12 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 WORKDIR /app
 
 # 创建必要目录
-RUN mkdir -p /app/downloads /app/Logs
+RUN mkdir -p /app/downloads /app/Logs /app/bin
 
-# 复制二进制文件
-COPY bin/ /app/bin/
+# 从下载阶段复制二进制文件
+COPY --from=downloader /tmp/N_m3u8DL-RE /app/bin/
+COPY --from=downloader /tmp/ffmpeg-master-latest-linux64-lgpl/bin/ffmpeg /app/bin/
+COPY --from=downloader /tmp/Bento4-SDK-1-6-0-641.x86_64-unknown-linux/bin/mp4decrypt /app/bin/
 
 # 复制后端二进制
 COPY --from=backend /app/server ./
@@ -65,8 +87,5 @@ ENV PORT=8080
 ENV DOWNLOAD_DIR=/app/downloads
 ENV BIN_DIR=/app/bin
 ENV DB_PATH=/app/data.db
-
-# 预创建数据库文件
-RUN touch /app/data.db && chmod 777 /app/data.db
 
 CMD ["./server"]
