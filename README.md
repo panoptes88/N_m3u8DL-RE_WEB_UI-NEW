@@ -13,6 +13,16 @@
 
 ## 快速开始
 
+### Docker 快速体验
+
+```bash
+mkdir /data/m3u8dl -p
+cd /data/m3u8dl
+docker run -d --name m3u8dl -p 8089:8080 -e ALLOW_INSECURE=true -v ./downloads:/app/downloads ghcr.io/panoptes88/n_m3u8dl-re-web-ui:latest
+```
+
+访问 http://localhost:8089
+
 ### 使用 Docker Compose（推荐）
 
 ```bash
