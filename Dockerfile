@@ -1,5 +1,5 @@
 # 构建前端
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY web/ .
 RUN npm run build
 
 # 构建后端
-FROM golang:1.21 AS backend
+FROM golang:1.25 AS backend
 
 WORKDIR /app
 
@@ -30,7 +30,7 @@ ENV GOPROXY=https://goproxy.cn,direct
 RUN go mod tidy && CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o server ./cmd/server
 
 # 下载二进制文件阶段
-FROM alpine:3.19 AS downloader
+FROM alpine:3.23 AS downloader
 
 WORKDIR /tmp
 
@@ -50,14 +50,14 @@ RUN wget -q https://www.bok.net/Bento4/binaries/Bento4-SDK-1-6-0-641.x86_64-unkn
     unzip -q Bento4-SDK-1-6-0-641.x86_64-unknown-linux.zip
 
 # 最终镜像
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 # 只安装必要的运行时库
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libgcc-s1 \
     libstdc++6 \
-    libicu72 \
+    libicu76 \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
