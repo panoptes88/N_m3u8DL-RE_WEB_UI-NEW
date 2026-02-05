@@ -8,13 +8,15 @@
     <div class="app-container" :class="{ dark: appStore.theme === 'dark' }">
       <template v-if="userStore.isLoggedIn">
         <a-layout class="layout">
-          <!-- 左侧导航栏 -->
+          <!-- PC端左侧导航栏 (移动端隐藏) -->
           <a-layout-sider
             v-model:collapsed="appStore.collapsed"
             :trigger="null"
             collapsible
-            class="sider"
-            :class="{ 'sider-dark': appStore.theme === 'dark' }"
+            class="sider pc-sider"
+            :class="{ 'sider-dark': appStore.theme === 'dark', 'sider-collapsed-hidden': appStore.collapsed && isMobile }"
+            :width="200"
+            :collapsedWidth="80"
           >
             <div class="logo">
               <span v-if="!appStore.collapsed">N_m3u8DL-RE</span>
@@ -33,14 +35,20 @@
             <!-- 顶部栏 -->
             <a-layout-header class="header" :class="{ 'header-dark': appStore.theme === 'dark' }">
               <div class="header-left">
+                <!-- 移动端菜单图标 -->
+                <menu-unfold-outlined
+                  class="trigger mobile-trigger"
+                  @click="mobileMenuVisible = true"
+                />
+                <!-- PC端收缩图标 -->
                 <menu-unfold-outlined
                   v-if="appStore.collapsed"
-                  class="trigger"
+                  class="trigger pc-trigger"
                   @click="appStore.toggleCollapsed"
                 />
                 <menu-fold-outlined
                   v-else
-                  class="trigger"
+                  class="trigger pc-trigger"
                   @click="appStore.toggleCollapsed"
                 />
               </div>
@@ -89,6 +97,28 @@
             </a-layout-content>
           </a-layout>
         </a-layout>
+
+        <!-- 移动端抽屉式侧边栏 -->
+        <a-drawer
+          v-model:open="mobileMenuVisible"
+          placement="left"
+          :width="200"
+          :closable="false"
+          :show-header="false"
+          class="mobile-drawer"
+          :body-style="{ padding: 0 }"
+        >
+          <div class="mobile-menu-header">
+            <span>M3U8</span>
+          </div>
+          <a-menu
+            v-model:selectedKeys="selectedKeys"
+            mode="inline"
+            :theme="appStore.theme"
+            :items="menuItems"
+            @click="handleMobileMenuClick"
+          />
+        </a-drawer>
       </template>
       <template v-else>
         <router-view />
@@ -117,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, h } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { theme } from 'ant-design-vue'
@@ -143,6 +173,19 @@ const userStore = useUserStore()
 const appStore = useAppStore()
 
 const selectedKeys = ref(['dashboard'])
+const mobileMenuVisible = ref(false)
+const isMobile = ref(window.innerWidth <= 768)
+
+const handleResize = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+
+// 修改密码相关
+const changePasswordVisible = ref(false)
+const changePasswordLoading = ref(false)
+const changePasswordForm = reactive({
+  newPassword: ''
+})
 
 const menuItems = [
   {
@@ -162,14 +205,12 @@ const menuItems = [
   }
 ]
 
-// 修改密码相关
-const changePasswordVisible = ref(false)
-const changePasswordLoading = ref(false)
-const changePasswordForm = reactive({
-  newPassword: ''
-})
-
 function handleMenuClick({ key }) {
+  router.push({ name: key.charAt(0).toUpperCase() + key.slice(1) })
+}
+
+function handleMobileMenuClick({ key }) {
+  mobileMenuVisible.value = false
   router.push({ name: key.charAt(0).toUpperCase() + key.slice(1) })
 }
 
@@ -213,10 +254,15 @@ function handleChangePasswordCancel() {
 }
 
 onMounted(async () => {
+  window.addEventListener('resize', handleResize)
   const isLoggedIn = await userStore.checkLogin()
   if (!isLoggedIn && route.name !== 'Login') {
     router.push('/login')
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -234,6 +280,7 @@ onMounted(async () => {
   min-height: 100vh;
 }
 
+/* PC端侧边栏 */
 .sider {
   background: #fff;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
@@ -323,5 +370,68 @@ onMounted(async () => {
   padding: 24px;
   margin: 0;
   overflow: auto;
+}
+
+/* PC端触发器 */
+.pc-trigger {
+  display: inline-block;
+}
+
+/* 移动端触发器 */
+.mobile-trigger {
+  display: none;
+}
+
+/* 移动端抽屉样式 */
+.mobile-menu-header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: #1677ff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+:global(.dark) .mobile-menu-header {
+  color: #fff;
+  border-bottom-color: #303030;
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .pc-sider {
+    display: none;
+  }
+
+  .pc-trigger {
+    display: none;
+  }
+
+  .mobile-trigger {
+    display: inline-block;
+  }
+
+  .header {
+    padding: 0 16px;
+  }
+
+  .content {
+    padding: 16px;
+  }
+
+  .username {
+    max-width: 60px;
+  }
+}
+
+/* 移动端侧边栏完全隐藏 - 使用独立类避免 !important */
+.sider-collapsed-hidden {
+  width: 0;
+  min-width: 0;
+  max-width: 0;
+  flex: 0 0 0;
+  overflow: hidden;
 }
 </style>

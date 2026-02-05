@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard">
     <a-row :gutter="16" class="stats-row">
-      <a-col :span="8">
+      <a-col :xs="24" :sm="8" :md="8">
         <a-card>
           <a-statistic
             title="等待中任务"
@@ -14,7 +14,7 @@
           </a-statistic>
         </a-card>
       </a-col>
-      <a-col :span="8">
+      <a-col :xs="24" :sm="8" :md="8">
         <a-card>
           <a-statistic
             title="下载中任务"
@@ -27,7 +27,7 @@
           </a-statistic>
         </a-card>
       </a-col>
-      <a-col :span="8">
+      <a-col :xs="24" :sm="8" :md="8">
         <a-card>
           <a-statistic
             title="已完成任务"
@@ -43,10 +43,9 @@
     </a-row>
 
     <a-card title="快速下载" class="quick-download">
-      <a-form layout="inline" :model="quickDownloadForm">
+      <a-form layout="vertical" :model="quickDownloadForm">
         <a-form-item
           label="m3u8 URL"
-          style="flex: 1"
           :rules="[{ required: true, message: '请输入m3u8链接' }]"
         >
           <a-input
@@ -55,22 +54,29 @@
             size="large"
           />
         </a-form-item>
-        <a-form-item label="输出名称（可选）">
-          <a-input
-            v-model:value="quickDownloadForm.outputName"
-            placeholder="output.mp4"
-          />
-        </a-form-item>
-        <a-form-item>
-          <a-button
-            type="primary"
-            size="large"
-            :loading="quickDownloadLoading"
-            @click="handleQuickDownload"
-          >
-            开始下载
-          </a-button>
-        </a-form-item>
+        <a-row :gutter="12">
+          <a-col :xs="24" :sm="12">
+            <a-form-item label="输出名称（可选）">
+              <a-input
+                v-model:value="quickDownloadForm.outputName"
+                placeholder="output.mp4"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :sm="12" class="btn-col">
+            <a-form-item label=" ">
+              <a-button
+                type="primary"
+                size="large"
+                block
+                :loading="quickDownloadLoading"
+                @click="handleQuickDownload"
+              >
+                开始下载
+              </a-button>
+            </a-form-item>
+          </a-col>
+        </a-row>
       </a-form>
     </a-card>
 
@@ -84,6 +90,7 @@
         :pagination="false"
         size="small"
         :loading="loading"
+        :scroll="{ x: 500 }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'status'">
@@ -122,7 +129,7 @@
       v-model:open="logModalVisible"
       title="任务日志"
       :footer="null"
-      width="800px"
+      class="log-modal"
     >
       <a-spin :spinning="logLoading">
         <a-textarea
@@ -156,10 +163,10 @@ const logLoading = ref(false)
 const logContent = ref('')
 
 const columns = [
-  { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
-  { title: 'URL', dataIndex: 'url', key: 'url', ellipsis: true, width: 400 },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 80 },
-  { title: '进度', dataIndex: 'progress', key: 'progress', width: 180 },
+  { title: 'ID', dataIndex: 'id', key: 'id', width: 50 },
+  { title: 'URL', dataIndex: 'url', key: 'url', ellipsis: true },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 70 },
+  { title: '进度', dataIndex: 'progress', key: 'progress', width: 100 },
   { title: '操作', key: 'action', width: 120 }
 ]
 
@@ -257,6 +264,23 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 
+.btn-col {
+  display: flex;
+  align-items: flex-end;
+}
+
+@media (max-width: 576px) {
+  .stats-row :deep(.ant-card-body) {
+    padding: 12px;
+  }
+  .stats-row :deep(.ant-statistic-title) {
+    font-size: 12px;
+  }
+  .stats-row :deep(.ant-statistic-content) {
+    font-size: 20px;
+  }
+}
+
 .quick-download {
   margin-bottom: 16px;
 }
@@ -269,5 +293,25 @@ onUnmounted(() => {
   font-size: 12px;
   color: #999;
   margin-left: 4px;
+}
+
+.log-modal {
+  max-width: calc(100vw - 32px);
+}
+
+.log-modal :deep(.ant-modal-body) {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.log-modal :deep(.ant-modal-content) {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+@media (max-width: 576px) {
+  .recent-tasks :deep(.ant-table-cell) {
+    padding: 8px !important;
+  }
 }
 </style>
