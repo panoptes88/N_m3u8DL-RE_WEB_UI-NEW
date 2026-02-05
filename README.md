@@ -24,21 +24,20 @@
 ```bash
 mkdir /data/m3u8dl -p
 cd /data/m3u8dl
-docker run -d --name m3u8dl -p 8089:8080 -e ALLOW_INSECURE=true -v ./downloads:/app/downloads ghcr.io/panoptes88/n_m3u8dl-re-web-ui:latest
+docker run -d --name m3u8dl -p 8080:8080 -e ALLOW_INSECURE=true -e ADMIN_PASSWORD=admin123 -v ./db:/app/db -v ./downloads:/app/downloads ghcr.io/panoptes88/n_m3u8dl-re-web-ui:latest
 ```
 
 > **提示**：国内网络可将 `ghcr.io` 替换为 `ghcr.1ms.run`，避免镜像拉取失败。
 
-访问 http://localhost:8089
+访问 http://localhost:8080
 
 ### 使用 Docker Compose（推荐）
 
 ```bash
-# 构建并启动服务
+mkdir /data/m3u8dl -p
+cd /data/m3u8dl
+curl https://raw.githubusercontent.com/panoptes88/N_m3u8DL-RE-WEB-UI/refs/heads/main/docker-compose-example.yml -o docker-compose.yml
 docker compose up -d
-
-# 查看日志
-docker compose logs -f
 ```
 
 访问 http://localhost:8080
@@ -46,28 +45,6 @@ docker compose logs -f
 默认登录信息：
 - 用户名: admin
 - 密码: admin123
-
-### 手动部署
-
-```bash
-# 1. 准备二进制文件
-mkdir -p bin
-cp /path/to/N_m3u8DL-RE ./bin/
-cp /path/to/ffmpeg ./bin/
-# Bento4 解压后从 bin/x86_64-unknown-linux/ 目录复制
-cp /path/to/mp4decrypt ./bin/
-
-# 2. 构建前端
-cd web && npm install && npm run build
-
-# 3. 构建后端
-cd .. && go build -o server ./cmd/server
-
-# 4. 运行
-./server
-```
-
-> **注意**：二进制文件版本需要与 Dockerfile 中下载的版本保持一致，否则可能出现兼容性问题。
 
 ## 目录结构
 
@@ -97,24 +74,26 @@ N_m3u8DL-RE_WEB_UI/
 
 通过环境变量配置：
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| PORT | 8080 | 服务端口 |
-| ADMIN_PASSWORD | admin123 | 管理员密码 |
-| DOWNLOAD_DIR | ./downloads | 下载文件目录 |
-| BIN_DIR | ./bin | 工具目录 |
-| DB_PATH | ./data.db | 数据库文件路径 |
-| TZ | Asia/Shanghai | 时区设置 |
-| ALLOW_INSECURE | true | 是否允许非 HTTPS 环境（开发模式） |
-| ALLOW_ORIGINS | http://localhost:8080,http://127.0.0.1:8080 | 允许的跨域来源，多个用逗号分隔 |
-| DOWNLOAD_TIMEOUT | 0 | 下载超时时间（秒），0 表示不限制 |
+| | 变量 | 默认值 | 说明 |
+|-:|------|--------|------|
+| 🔴 | PORT | 8080 | 服务端口 |
+| 🔴 | DOWNLOAD_DIR | ./downloads | 下载文件目录 |
+| 🔴 | BIN_DIR | ./bin | 工具目录 |
+| 🔴 | DB_PATH | ./db/data.db | 数据库文件路径 |
+| 🟢 | ADMIN_PASSWORD | admin123 | 管理员密码 |
+| 🟢 | TZ | Asia/Shanghai | 时区设置 |
+| 🟢 | ALLOW_INSECURE | false | 是否允许非 HTTPS 环境，如需 HTTP 访问需设为 true |
+| 🟢 | ALLOW_ORIGINS | http://localhost:8080,http://127.0.0.1:8080 | 允许的跨域来源，多个用逗号分隔 |
+| 🟢 | DOWNLOAD_TIMEOUT | 0 | 下载超时时间（秒），0 表示不限制 |
+
+> **说明**：🔴 建议保持默认，🟢 推荐按需修改。
 
 ### 详细说明
 
 #### ALLOW_INSECURE
 控制 Cookie 的 Secure 属性：
-- `true`：Cookie 不设置 Secure 标志，适用于 HTTP 环境（开发）
-- `false`：Cookie 设置 Secure 标志，仅 HTTPS 传输，适用于生产环境
+- `false`：Cookie 设置 Secure 标志，仅 HTTPS 传输，适用于生产环境（默认）
+- `true`：Cookie 不设置 Secure 标志，适用于 HTTP 环境
 
 #### ALLOW_ORIGINS
 配置允许跨域访问的来源地址，防止 CSRF 攻击。多个地址用逗号分隔。
