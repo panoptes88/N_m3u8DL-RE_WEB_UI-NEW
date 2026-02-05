@@ -74,7 +74,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { message } from 'ant-design-vue'
 import { ReloadOutlined, PlayCircleOutlined, FileOutlined } from '@ant-design/icons-vue'
 import { get, del } from '../api'
@@ -172,9 +172,8 @@ async function playVideo(record) {
   document.title = record.name
 
   // 等待 DOM 更新后初始化播放器
-  setTimeout(() => {
-    initXgPlayer(currentVideoUrl.value, record.name)
-  }, 100)
+  await nextTick()
+  initXgPlayer(currentVideoUrl.value, record.name)
 }
 
 function initXgPlayer(url, title = '') {
