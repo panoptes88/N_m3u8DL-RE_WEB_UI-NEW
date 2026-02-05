@@ -68,7 +68,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 WORKDIR /app
 
 # 创建必要目录
-RUN mkdir -p /app/downloads /app/Logs /app/bin
+RUN mkdir -p /app/downloads /app/Logs /app/bin /app/db
 
 # 从下载阶段复制二进制文件
 COPY --from=downloader /tmp/N_m3u8DL-RE /app/bin/
@@ -86,6 +86,6 @@ EXPOSE 8080
 ENV PORT=8080
 ENV DOWNLOAD_DIR=/app/downloads
 ENV BIN_DIR=/app/bin
-ENV DB_PATH=/app/data.db
+ENV DB_PATH=/app/db/data.db
 
 CMD ["./server"]
