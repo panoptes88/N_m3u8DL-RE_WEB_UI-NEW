@@ -64,35 +64,32 @@
       :footer="null"
       @cancel="closeVideo"
       class="video-modal"
+      :width="800"
     >
-      <div class="video-container">
-        <video
-          ref="videoPlayer"
-          controls
-          class="video-player"
-          @error="handleVideoError"
-        >
-          您的浏览器不支持视频播放
-        </video>
+      <div class="video-wrapper">
+        <div id="xgplayer-container" class="xgplayer-container"></div>
       </div>
     </a-modal>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { ReloadOutlined, PlayCircleOutlined, FileOutlined } from '@ant-design/icons-vue'
 import { get, del } from '../api'
+import Player from 'xgplayer'
 
 const loading = ref(false)
 const files = ref([])
 const videoModalVisible = ref(false)
 const currentVideoName = ref('')
 const currentVideoUrl = ref('')
-const videoPlayer = ref(null)
 const selectedRowKeys = ref([])
 const pageSize = ref(10)
+
+// 西瓜播放器实例
+let xgPlayer = null
 
 const videoExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.wmv', '.m4v', '.3gp']
 
@@ -124,7 +121,7 @@ const columns = [
     dataIndex: 'modTime',
     key: 'modTime',
     width: 120,
-    sorter: (a, b) => new Date(a.modTime) - new Date(b.modTime),
+    sorter: (a, b) => new Date(a.modTime) - new Date(a.modTime),
     responsive: ['lg']
   },
   { title: '操作', key: 'action', width: 100 }
@@ -154,7 +151,6 @@ async function fetchFiles() {
   loading.value = true
   try {
     files.value = await get('/files')
-    // 清空选择
     selectedRowKeys.value = []
   } catch (err) {
     message.error('获取文件列表失败')
@@ -167,34 +163,61 @@ function downloadFile(name) {
   window.open(`/api/files/download?name=${encodeURIComponent(name)}`, '_blank')
 }
 
-function playVideo(record) {
+async function playVideo(record) {
   currentVideoName.value = record.name
   currentVideoUrl.value = `/api/files/download?name=${encodeURIComponent(record.name)}`
   videoModalVisible.value = true
 
-  // 等待 DOM 更新后设置视频源
+  // 修改页面标题为文件名（用于 QQ 浏览器嗅探）
+  document.title = record.name
+
+  // 等待 DOM 更新后初始化播放器
   setTimeout(() => {
-    if (videoPlayer.value) {
-      videoPlayer.value.src = currentVideoUrl.value
-      videoPlayer.value.load()
-    }
+    initXgPlayer(currentVideoUrl.value, record.name)
   }, 100)
 }
 
-function closeVideo() {
-  if (videoPlayer.value) {
-    // 先移除事件监听，避免触发 error
-    videoPlayer.value.onerror = null
-    videoPlayer.value.pause()
-    videoPlayer.value.src = ''
+function initXgPlayer(url, title = '') {
+  // 如果已存在播放器，先销毁
+  if (xgPlayer) {
+    xgPlayer.destroy()
+    xgPlayer = null
   }
+
+  xgPlayer = new Player({
+    id: 'xgplayer-container',
+    url: url,
+    playbackRate: [0.5, 0.75, 1, 1.25, 1.5, 2],
+    defaultPlaybackRate: 1,
+    fluid: true,
+    maxVolume: 1,
+    ignores: ['quality'],
+    closeVideoClick: true,
+    title: title,
+    error: () => {
+      message.error('视频加载失败，请检查文件是否完整')
+    }
+  })
+}
+
+function closeVideo() {
+  if (xgPlayer) {
+    xgPlayer.destroy()
+    xgPlayer = null
+  }
+  // 恢复页面标题
+  document.title = 'N_m3u8DL-RE Web UI'
   currentVideoName.value = ''
   currentVideoUrl.value = ''
 }
 
-function handleVideoError() {
-  message.error('视频加载失败，请检查文件是否完整')
-}
+// 组件销毁时清理播放器
+onUnmounted(() => {
+  if (xgPlayer) {
+    xgPlayer.destroy()
+    xgPlayer = null
+  }
+})
 
 async function deleteFile(name) {
   try {
@@ -212,7 +235,6 @@ async function batchDelete() {
   }
 
   const names = selectedRowKeys.value.filter(name => {
-    // 过滤掉目录
     const file = files.value.find(f => f.name === name)
     return file && !file.isDir
   })
@@ -223,7 +245,6 @@ async function batchDelete() {
   }
 
   try {
-    // 逐个删除
     let success = 0
     let failed = 0
     for (const name of names) {
@@ -282,18 +303,13 @@ onMounted(() => {
   color: #4096ff;
 }
 
-.video-container {
-  display: flex;
-  justify-content: center;
-  background: #000;
-  border-radius: 4px;
-  overflow: hidden;
+.video-wrapper {
+  position: relative;
 }
 
-.video-player {
-  max-width: 100%;
-  max-height: 450px;
+.xgplayer-container {
   width: 100%;
+  max-height: 450px;
 }
 
 .video-modal :deep(.ant-modal-body) {
