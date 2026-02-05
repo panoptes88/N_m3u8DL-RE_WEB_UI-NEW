@@ -14,7 +14,7 @@
             :trigger="null"
             collapsible
             class="sider pc-sider"
-            :class="{ 'sider-dark': appStore.theme === 'dark' }"
+            :class="{ 'sider-dark': appStore.theme === 'dark', 'sider-collapsed-hidden': appStore.collapsed && isMobile }"
             :width="200"
             :collapsedWidth="80"
           >
@@ -174,6 +174,11 @@ const appStore = useAppStore()
 
 const selectedKeys = ref(['dashboard'])
 const mobileMenuVisible = ref(false)
+const isMobile = ref(window.innerWidth <= 768)
+
+window.addEventListener('resize', () => {
+  isMobile.value = window.innerWidth <= 768
+})
 
 // 修改密码相关
 const changePasswordVisible = ref(false)
@@ -392,15 +397,15 @@ onMounted(async () => {
 /* 移动端响应式 */
 @media (max-width: 768px) {
   .pc-sider {
-    display: none !important;
+    display: none;
   }
 
   .pc-trigger {
-    display: none !important;
+    display: none;
   }
 
   .mobile-trigger {
-    display: inline-block !important;
+    display: inline-block;
   }
 
   .header {
@@ -416,13 +421,12 @@ onMounted(async () => {
   }
 }
 
-/* 移动端侧边栏完全隐藏 */
-@media (max-width: 768px) {
-  .sider.ant-layout-sider-collapsed {
-    width: 0 !important;
-    min-width: 0 !important;
-    max-width: 0 !important;
-    flex: 0 0 0 !important;
-  }
+/* 移动端侧边栏完全隐藏 - 使用独立类避免 !important */
+.sider-collapsed-hidden {
+  width: 0;
+  min-width: 0;
+  max-width: 0;
+  flex: 0 0 0;
+  overflow: hidden;
 }
 </style>
