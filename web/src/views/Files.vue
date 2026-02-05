@@ -24,6 +24,7 @@
         :loading="loading"
         :row-selection="rowSelection"
         :row-key="record => record.name"
+        :scroll="{ x: 600 }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'name'">
@@ -60,9 +61,9 @@
     <a-modal
       v-model:open="videoModalVisible"
       :title="currentVideoName"
-      width="800px"
       :footer="null"
       @cancel="closeVideo"
+      class="video-modal"
     >
       <div class="video-container">
         <video
@@ -108,23 +109,25 @@ const columns = [
     dataIndex: 'name',
     key: 'name',
     ellipsis: true,
-    sorter: (a, b) => a.name.localeCompare(b.name)
+    sorter: (a, b) => a.name.localeCompare(b.name),
+    width: 150
   },
   {
     title: '大小',
     dataIndex: 'size',
     key: 'size',
-    width: 100,
+    width: 80,
     sorter: (a, b) => a.size - b.size
   },
   {
     title: '修改时间',
     dataIndex: 'modTime',
     key: 'modTime',
-    width: 160,
-    sorter: (a, b) => new Date(a.modTime) - new Date(b.modTime)
+    width: 120,
+    sorter: (a, b) => new Date(a.modTime) - new Date(b.modTime),
+    responsive: ['lg']
   },
-  { title: '操作', key: 'action', width: 150 }
+  { title: '操作', key: 'action', width: 100 }
 ]
 
 const rowSelection = computed(() => ({
@@ -291,5 +294,15 @@ onMounted(() => {
   max-width: 100%;
   max-height: 450px;
   width: 100%;
+}
+
+.video-modal :deep(.ant-modal-body) {
+  padding: 8px;
+}
+
+@media (max-width: 576px) {
+  .files-page :deep(.ant-table-cell) {
+    padding: 8px !important;
+  }
 }
 </style>
