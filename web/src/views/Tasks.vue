@@ -165,6 +165,7 @@
         :data-source="taskStore.tasks"
         :pagination="{ pageSize: 10 }"
         :loading="taskStore.loading"
+        :scroll="{ x: 800 }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'status'">
@@ -201,7 +202,7 @@
       v-model:open="logModalVisible"
       title="任务日志"
       :footer="null"
-      width="800px"
+      class="log-modal"
     >
       <a-spin :spinning="logLoading">
         <a-textarea
@@ -258,13 +259,13 @@ const formRules = {
 }
 
 const columns = [
-  { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
-  { title: 'URL', dataIndex: 'url', key: 'url', ellipsis: true, width: 350 },
-  { title: '输出', dataIndex: 'output_name', key: 'outputName', ellipsis: true, width: 120 },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 80 },
-  { title: '进度', dataIndex: 'progress', key: 'progress', width: 180 },
-  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 160 },
-  { title: '操作', key: 'action', width: 120 }
+  { title: 'ID', dataIndex: 'id', key: 'id', width: 50 },
+  { title: 'URL', dataIndex: 'url', key: 'url', ellipsis: true, width: 200 },
+  { title: '输出', dataIndex: 'output_name', key: 'outputName', ellipsis: true, width: 80 },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 70 },
+  { title: '进度', dataIndex: 'progress', key: 'progress', width: 100 },
+  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: 130, responsive: ['lg'] },
+  { title: '操作', key: 'action', width: 100 }
 ]
 
 function getStatusColor(status) {
@@ -393,5 +394,19 @@ onUnmounted(() => {
 
 .task-list {
   flex: 1;
+}
+
+.log-modal {
+  max-width: calc(100vw - 32px);
+}
+
+.log-modal :deep(.ant-modal-body) {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.log-modal :deep(.ant-modal-content) {
+  max-width: 800px;
+  margin: 0 auto;
 }
 </style>
