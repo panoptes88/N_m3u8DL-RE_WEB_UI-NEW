@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard">
     <a-row :gutter="16" class="stats-row">
-      <a-col :xs="8" :sm="8">
+      <a-col :xs="24" :sm="8" :md="8">
         <a-card>
           <a-statistic
             title="等待中任务"
@@ -14,7 +14,7 @@
           </a-statistic>
         </a-card>
       </a-col>
-      <a-col :span="8">
+      <a-col :xs="24" :sm="8" :md="8">
         <a-card>
           <a-statistic
             title="下载中任务"
@@ -27,7 +27,7 @@
           </a-statistic>
         </a-card>
       </a-col>
-      <a-col :span="8">
+      <a-col :xs="24" :sm="8" :md="8">
         <a-card>
           <a-statistic
             title="已完成任务"
@@ -167,7 +167,7 @@ const columns = [
   { title: 'URL', dataIndex: 'url', key: 'url', ellipsis: true },
   { title: '状态', dataIndex: 'status', key: 'status', width: 70 },
   { title: '进度', dataIndex: 'progress', key: 'progress', width: 100 },
-  { title: '操作', key: 'action', width: 100 }
+  { title: '操作', key: 'action', width: 120 }
 ]
 
 const recentTasks = computed(() => taskStore.tasks.slice(0, 5))

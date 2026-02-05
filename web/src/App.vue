@@ -147,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, h } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { theme } from 'ant-design-vue'
@@ -176,9 +176,9 @@ const selectedKeys = ref(['dashboard'])
 const mobileMenuVisible = ref(false)
 const isMobile = ref(window.innerWidth <= 768)
 
-window.addEventListener('resize', () => {
+const handleResize = () => {
   isMobile.value = window.innerWidth <= 768
-})
+}
 
 // 修改密码相关
 const changePasswordVisible = ref(false)
@@ -254,10 +254,15 @@ function handleChangePasswordCancel() {
 }
 
 onMounted(async () => {
+  window.addEventListener('resize', handleResize)
   const isLoggedIn = await userStore.checkLogin()
   if (!isLoggedIn && route.name !== 'Login') {
     router.push('/login')
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
