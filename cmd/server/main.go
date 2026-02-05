@@ -64,6 +64,7 @@ func main() {
 		// 公开路由
 		api.POST("/auth/login", handler.Login)
 		api.POST("/auth/logout", handler.Logout)
+		api.POST("/auth/change-password", handler.ChangePassword)
 
 		// 需要认证的路由
 		protected := api.Group("")

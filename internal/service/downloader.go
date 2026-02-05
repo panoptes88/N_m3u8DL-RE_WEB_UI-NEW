@@ -64,6 +64,14 @@ func GetUserByUsername(username string) (*model.User, error) {
 	return &user, nil
 }
 
+func ChangePassword(username, newPassword string) error {
+	hashedPassword, err := model.HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+	return model.GetDB().Model(&model.User{}).Where("username = ?", username).Update("password", hashedPassword).Error
+}
+
 func CreateTask(req *CreateTaskRequest) (*model.Task, error) {
 	outputName := req.OutputName
 	if outputName == "" {

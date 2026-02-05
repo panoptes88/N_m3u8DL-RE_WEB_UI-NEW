@@ -67,6 +67,11 @@
                     </a-space>
                     <template #overlay>
                       <a-menu @click="handleUserMenuClick">
+                        <a-menu-item key="change-password">
+                          <key-outlined />
+                          <span style="margin-left: 8px;">修改密码</span>
+                        </a-menu-item>
+                        <a-menu-divider />
                         <a-menu-item key="logout">
                           <logout-outlined />
                           <span style="margin-left: 8px;">退出登录</span>
@@ -88,16 +93,37 @@
       <template v-else>
         <router-view />
       </template>
+
+      <!-- 修改密码弹窗 -->
+      <a-modal
+        v-model:open="changePasswordVisible"
+        title="修改密码"
+        :confirm-loading="changePasswordLoading"
+        @ok="handleChangePasswordOk"
+        @cancel="handleChangePasswordCancel"
+      >
+        <a-form :model="changePasswordForm" layout="vertical">
+          <a-form-item label="新密码" name="newPassword" :rules="[{ required: true, message: '请输入新密码' }]">
+            <a-input-password
+              v-model:value="changePasswordForm.newPassword"
+              placeholder="请输入新密码"
+              @pressEnter="handleChangePasswordOk"
+            />
+          </a-form-item>
+        </a-form>
+      </a-modal>
     </div>
   </a-config-provider>
 </template>
 
 <script setup>
-import { ref, onMounted, h } from 'vue'
+import { ref, reactive, onMounted, h } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { message } from 'ant-design-vue'
 import { theme } from 'ant-design-vue'
 import { useUserStore } from './stores/user'
 import { useAppStore } from './stores/app'
+import { post } from './api'
 import {
   DashboardOutlined,
   CloudDownloadOutlined,
@@ -106,6 +132,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined,
+  KeyOutlined,
   BulbOutlined,
   BulbFilled
 } from '@ant-design/icons-vue'
@@ -135,16 +162,54 @@ const menuItems = [
   }
 ]
 
+// 修改密码相关
+const changePasswordVisible = ref(false)
+const changePasswordLoading = ref(false)
+const changePasswordForm = reactive({
+  newPassword: ''
+})
+
 function handleMenuClick({ key }) {
   router.push({ name: key.charAt(0).toUpperCase() + key.slice(1) })
 }
 
 function handleUserMenuClick({ key }) {
-  if (key === 'logout') {
+  if (key === 'change-password') {
+    changePasswordVisible.value = true
+    changePasswordForm.newPassword = ''
+  } else if (key === 'logout') {
     userStore.logout().then(() => {
       router.push('/login')
     })
   }
+}
+
+async function handleChangePasswordOk() {
+  if (!changePasswordForm.newPassword) {
+    message.warning('请输入新密码')
+    return
+  }
+
+  changePasswordLoading.value = true
+  try {
+    await post('/auth/change-password', {
+      new_password: changePasswordForm.newPassword
+    })
+    message.success('密码修改成功')
+    changePasswordVisible.value = false
+    userStore.logout().then(() => {
+      router.push('/login')
+    })
+  } catch (err) {
+    message.error(err.response?.data?.error || '修改密码失败')
+  } finally {
+    changePasswordLoading.value = false
+  }
+}
+
+function handleChangePasswordCancel() {
+  changePasswordVisible.value = false
+  changePasswordForm.newPassword = ''
 }
 
 onMounted(async () => {
