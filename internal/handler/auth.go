@@ -56,3 +56,28 @@ func GetUser(c *gin.Context) {
 		"username": username,
 	})
 }
+
+type ChangePasswordRequest struct {
+	NewPassword string `json:"new_password" binding:"required"`
+}
+
+func ChangePassword(c *gin.Context) {
+	username, err := c.Cookie("auth_token")
+	if err != nil || username == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
+		return
+	}
+
+	var req ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
+		return
+	}
+
+	if err := service.ChangePassword(username, req.NewPassword); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "修改密码失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "密码修改成功"})
+}
