@@ -13,6 +13,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 视频 MIME 类型映射（包级别变量，避免重复创建）
+var videoMimeTypes = map[string]string{
+	".mp4":  "video/mp4",
+	".webm": "video/webm",
+	".mkv":  "video/x-matroska",
+	".avi":  "video/x-msvideo",
+	".mov":  "video/quicktime",
+	".flv":  "video/x-flv",
+	".wmv":  "video/x-ms-wmv",
+	".m4v":  "video/x-m4v",
+	".3gp":  "video/3gpp",
+	".mpg":  "video/mpeg",
+	".mpeg": "video/mpeg",
+}
+
 func ListFiles(c *gin.Context) {
 	cfg := config.Load()
 	files, err := service.ListFiles(cfg.DownloadDir)
@@ -71,20 +86,7 @@ func DeleteFile(c *gin.Context) {
 
 func getVideoMimeType(filename string) string {
 	ext := strings.ToLower(filepath.Ext(filename))
-	mimeTypes := map[string]string{
-		".mp4":  "video/mp4",
-		".webm": "video/webm",
-		".mkv":  "video/x-matroska",
-		".avi":  "video/x-msvideo",
-		".mov":  "video/quicktime",
-		".flv":  "video/x-flv",
-		".wmv":  "video/x-ms-wmv",
-		".m4v":  "video/x-m4v",
-		".3gp":  "video/3gpp",
-		".mpg":  "video/mpeg",
-		".mpeg": "video/mpeg",
-	}
-	if mime, ok := mimeTypes[ext]; ok {
+	if mime, ok := videoMimeTypes[ext]; ok {
 		return mime
 	}
 	return "application/octet-stream"
