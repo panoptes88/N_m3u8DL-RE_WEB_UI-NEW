@@ -256,7 +256,10 @@ func startDownloadTask(taskID uint, cfg *config.Config) {
 	task.PID = -1
 	model.GetDB().Save(task)
 
-	logFile := filepath.Join(cfg.DownloadDir, fmt.Sprintf("task_%d.log", task.ID))
+	// 日志文件放在 downloads/Logs 目录下
+	logDir := filepath.Join(cfg.DownloadDir, "Logs")
+	os.MkdirAll(logDir, 0755)
+	logFile := filepath.Join(logDir, fmt.Sprintf("task_%d.log", task.ID))
 	task.LogFile = logFile
 	model.GetDB().Save(task)
 
