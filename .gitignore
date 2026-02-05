@@ -9,7 +9,7 @@ bin/Logs/
 downloads/
 
 # Database
-data.db
+db/
 
 # Build outputs
 web/dist/
@@ -29,7 +29,7 @@ Thumbs.db
 *.exe
 *.test
 *.out
-server
+/server
 
 # Temporary
 *.tmp

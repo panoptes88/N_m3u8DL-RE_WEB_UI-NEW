@@ -41,7 +41,7 @@ func Load() *Config {
 
 	dbPath := os.Getenv("DB_PATH")
 	if dbPath == "" {
-		dbPath = "./data.db"
+		dbPath = "./db/data.db"
 	}
 
 	allowOrigins := os.Getenv("ALLOW_ORIGINS")
