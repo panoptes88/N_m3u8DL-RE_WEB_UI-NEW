@@ -1,7 +1,7 @@
 services:
-  webui:
+  m3u8dl:
     image: ghcr.io/panoptes88/n_m3u8dl-re-web-ui:latest
-    container_name: n-m3u8dl-webui
+    container_name: m3u8dl
     ports:
       - "8080:8080"
     volumes:
