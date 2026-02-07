@@ -20,6 +20,7 @@ type CreateTaskRequest struct {
 	BaseURL          string `json:"base_url"`
 	DelAfterDone     bool   `json:"del_after_done"`
 	BinaryMerge      bool   `json:"binary_merge"`
+	AutoSelect       bool   `json:"auto_select"`
 	Key              string `json:"key"`
 	DecryptionEngine string `json:"decryption_engine"`
 	CustomArgs       string `json:"custom_args"`
@@ -66,6 +67,7 @@ func CreateTask(c *gin.Context) {
 		BaseURL:          req.BaseURL,
 		DelAfterDone:     req.DelAfterDone,
 		BinaryMerge:      req.BinaryMerge,
+		AutoSelect:       req.AutoSelect,
 		Key:              req.Key,
 		DecryptionEngine: req.DecryptionEngine,
 		CustomArgs:       req.CustomArgs,
