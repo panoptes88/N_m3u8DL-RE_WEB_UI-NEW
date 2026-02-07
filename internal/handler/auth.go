@@ -78,9 +78,16 @@ type ChangePasswordRequest struct {
 }
 
 func ChangePassword(c *gin.Context) {
-	username, err := c.Cookie("auth_token")
-	if err != nil || username == "" {
+	token, err := c.Cookie("auth_token")
+	if err != nil || token == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
+		return
+	}
+
+	// 通过 token 获取用户
+	user, err := model.GetUserByToken(model.GetDB(), token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "登录已过期"})
 		return
 	}
 
@@ -90,7 +97,7 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 
-	if err := service.ChangePassword(username, req.NewPassword); err != nil {
+	if err := service.ChangePassword(user.Username, req.NewPassword); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "修改密码失败"})
 		return
 	}
