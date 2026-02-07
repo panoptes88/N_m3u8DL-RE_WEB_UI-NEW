@@ -60,16 +60,16 @@ func CreateSession(db *gorm.DB, userID uint) (*Session, error) {
 	return session, nil
 }
 
-// GetUserByToken 通过 token 获取用户
+// GetUserByToken 通过 token 获取用户（使用 JOIN 单次查询）
 func GetUserByToken(db *gorm.DB, token string) (*User, error) {
-	var session Session
-	err := db.Where("token = ? AND expires_at > ?", token, time.Now()).First(&session).Error
-	if err != nil {
-		return nil, err
-	}
-
 	var user User
-	err = db.First(&user, session.UserID).Error
+	// 使用 JOIN 在一次查询中获取用户信息
+	err := db.Table("sessions").
+		Select("users.*").
+		Joins("JOIN users ON sessions.user_id = users.id").
+		Where("sessions.token = ? AND sessions.expires_at > ?", token, time.Now()).
+		First(&user).Error
+
 	if err != nil {
 		return nil, err
 	}

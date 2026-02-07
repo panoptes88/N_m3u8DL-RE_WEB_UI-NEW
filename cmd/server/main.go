@@ -100,8 +100,6 @@ func main() {
 // startSessionCleanup 定时清理过期会话
 func startSessionCleanup() {
 	ticker := time.NewTicker(1 * time.Hour)
-	defer ticker.Stop()
-
 	for range ticker.C {
 		if err := model.DeleteExpiredSessions(model.GetDB()); err != nil {
 			log.Printf("清理过期会话失败: %v", err)
