@@ -25,6 +25,7 @@
         :row-selection="rowSelection"
         :row-key="record => record.name"
         :scroll="{ x: 600 }"
+        @change="handleTableChange"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'name'">
@@ -140,6 +141,10 @@ function formatSize(bytes) {
   const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+function handleTableChange(paginationInfo) {
+  pageSize.value = paginationInfo.pageSize
 }
 
 function isVideoFile(filename) {

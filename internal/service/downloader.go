@@ -28,6 +28,7 @@ type CreateTaskRequest struct {
 	BaseURL          string `json:"base_url"`
 	DelAfterDone     bool   `json:"del_after_done"`
 	BinaryMerge      bool   `json:"binary_merge"`
+	AutoSelect       bool   `json:"auto_select"`
 	Key              string `json:"key"`
 	DecryptionEngine string `json:"decryption_engine"`
 	CustomArgs       string `json:"custom_args"`
@@ -102,6 +103,7 @@ func CreateTask(req *CreateTaskRequest) (*model.Task, error) {
 		BaseURL:           req.BaseURL,
 		DelAfterDone:      req.DelAfterDone,
 		BinaryMerge:       req.BinaryMerge,
+		AutoSelect:        req.AutoSelect,
 		Key:               req.Key,
 		DecryptionEngine:  decryptionEngine,
 		CustomArgs:        req.CustomArgs,
@@ -351,6 +353,11 @@ func buildCommandArgs(task *model.Task, cfg *config.Config) []string {
 	// 二进制合并
 	if task.BinaryMerge {
 		args = append(args, "--binary-merge")
+	}
+
+	// 自动选择最佳轨道
+	if task.AutoSelect {
+		args = append(args, "--auto-select")
 	}
 
 	// 解密

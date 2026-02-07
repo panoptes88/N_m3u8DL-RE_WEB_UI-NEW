@@ -21,6 +21,7 @@ type Task struct {
 	BaseURL           string         `gorm:"size:1024" json:"base_url,omitempty"`
 	DelAfterDone      bool           `gorm:"default:true" json:"del_after_done"`
 	BinaryMerge       bool           `gorm:"default:false" json:"binary_merge"`
+	AutoSelect        bool           `gorm:"default:false" json:"auto_select"`
 	Key               string         `gorm:"size:512" json:"key,omitempty"`
 	DecryptionEngine  string         `gorm:"size:32;default:'MP4DECRYPT'" json:"decryption_engine"`
 	CustomArgs        string         `gorm:"size:2048" json:"custom_args,omitempty"`

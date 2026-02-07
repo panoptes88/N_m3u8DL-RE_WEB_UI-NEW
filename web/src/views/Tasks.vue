@@ -75,6 +75,13 @@
               </a-checkbox>
             </a-form-item>
           </a-col>
+          <a-col :xs="24" :sm="12" :md="8">
+            <a-form-item label=" " name="autoSelect">
+              <a-checkbox v-model:checked="formState.autoSelect">
+                自动选择最佳轨道
+              </a-checkbox>
+            </a-form-item>
+          </a-col>
         </a-row>
 
         <!-- 解密选项 -->
@@ -133,6 +140,9 @@
             <a-button size="large" @click="resetForm">
               重置
             </a-button>
+            <a-checkbox v-model:checked="keepFormAfterCreate">
+              创建后保留表单
+            </a-checkbox>
           </a-space>
         </a-form-item>
       </a-form>
@@ -233,6 +243,7 @@ const taskStore = useTaskStore()
 const creating = ref(false)
 const formRef = ref(null)
 const statusFilter = ref('')
+const keepFormAfterCreate = ref(false) // 创建后保留表单
 const logModalVisible = ref(false)
 const logLoading = ref(false)
 const logContent = ref('')
@@ -247,6 +258,7 @@ const formState = reactive({
   baseUrl: '',
   delAfterDone: true,
   binaryMerge: false,
+  autoSelect: false,
   key: '',
   decryptionEngine: 'MP4DECRYPT',
   customArgs: '',
@@ -334,6 +346,7 @@ async function handleCreate() {
       base_url: formState.baseUrl,
       del_after_done: formState.delAfterDone,
       binary_merge: formState.binaryMerge,
+      auto_select: formState.autoSelect,
       key: formState.key,
       decryption_engine: formState.decryptionEngine,
       custom_args: formState.customArgs,
@@ -342,7 +355,10 @@ async function handleCreate() {
 
     await taskStore.createTask(args)
     message.success('任务创建成功')
-    resetForm()
+    // 根据开关决定是否保留表单
+    if (!keepFormAfterCreate.value) {
+      resetForm()
+    }
   } catch (err) {
     message.error(err.response?.data?.error || '创建任务失败')
   } finally {
