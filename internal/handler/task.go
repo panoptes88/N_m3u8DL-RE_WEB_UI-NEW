@@ -24,6 +24,7 @@ type CreateTaskRequest struct {
 	Key              string `json:"key"`
 	DecryptionEngine string `json:"decryption_engine"`
 	CustomArgs       string `json:"custom_args"`
+	CustomProxy      string `json:"custom_proxy"`
 }
 
 func ListTasks(c *gin.Context) {
@@ -71,6 +72,7 @@ func CreateTask(c *gin.Context) {
 		Key:              req.Key,
 		DecryptionEngine: req.DecryptionEngine,
 		CustomArgs:       req.CustomArgs,
+		CustomProxy:      req.CustomProxy,
 	}
 
 	task, err := service.CreateTask(serviceReq)

@@ -320,6 +320,7 @@ function resetForm() {
   formState.baseUrl = ''
   formState.delAfterDone = true
   formState.binaryMerge = false
+  formState.autoSelect = false
   formState.key = ''
   formState.decryptionEngine = 'MP4DECRYPT'
   formState.customArgs = ''
