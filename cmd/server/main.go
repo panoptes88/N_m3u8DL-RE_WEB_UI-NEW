@@ -35,6 +35,9 @@ func main() {
 	// 启动下载任务轮询
 	go service.StartTaskPolling(cfg)
 
+	// 启动会话清理定时任务（每小时清理一次过期会话）
+	go startSessionCleanup()
+
 	// Gin 设置
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
@@ -91,5 +94,19 @@ func main() {
 	log.Printf("服务器启动在 :%d", cfg.Port)
 	if err := r.Run(":" + fmt.Sprintf("%d", cfg.Port)); err != nil {
 		log.Fatalf("服务器启动失败: %v", err)
+	}
+}
+
+// startSessionCleanup 定时清理过期会话
+func startSessionCleanup() {
+	ticker := time.NewTicker(1 * time.Hour)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		if err := model.DeleteExpiredSessions(model.GetDB()); err != nil {
+			log.Printf("清理过期会话失败: %v", err)
+		} else {
+			log.Println("已清理过期会话")
+		}
 	}
 }

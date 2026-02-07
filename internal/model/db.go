@@ -29,7 +29,7 @@ func InitDB(dbPath string) {
 	}
 
 	// 自动迁移
-	if err = db.AutoMigrate(&User{}, &Task{}); err != nil {
+	if err = db.AutoMigrate(&User{}, &Task{}, &Session{}); err != nil {
 		log.Fatalf("数据库迁移失败: %v", err)
 	}
 

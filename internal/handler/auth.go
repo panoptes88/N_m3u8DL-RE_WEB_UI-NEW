@@ -29,10 +29,16 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// 创建会话，生成随机 token
+	session, err := model.CreateSession(model.GetDB(), user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建会话失败"})
+		return
+	}
+
 	// 设置 cookie，有效期 24 小时
-	// Secure: 生产环境应设为 true（通过环境变量 ALLOW_INSECURE 控制）
 	cfg := config.Load()
-	c.SetCookie("auth_token", user.Username, 86400, "/", "", !cfg.AllowInsecure, true)
+	c.SetCookie("auth_token", session.Token, 86400, "/", "", !cfg.AllowInsecure, true)
 
 	c.JSON(http.StatusOK, gin.H{
 		"id":       user.ID,
@@ -41,19 +47,29 @@ func Login(c *gin.Context) {
 }
 
 func Logout(c *gin.Context) {
+	token, err := c.Cookie("auth_token")
+	if err == nil && token != "" {
+		model.DeleteSession(model.GetDB(), token)
+	}
 	c.SetCookie("auth_token", "", -1, "/", "", !config.Load().AllowInsecure, true)
 	c.JSON(http.StatusOK, gin.H{"message": "登出成功"})
 }
 
 func GetUser(c *gin.Context) {
-	username, err := c.Cookie("auth_token")
-	if err != nil || username == "" {
+	token, err := c.Cookie("auth_token")
+	if err != nil || token == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
 
+	user, err := model.GetUserByToken(model.GetDB(), token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "登录已过期"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"username": username,
+		"username": user.Username,
 	})
 }
 
